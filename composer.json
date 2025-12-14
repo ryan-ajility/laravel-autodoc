@@ -1,0 +1,66 @@
+{
+    "name": "ajility/laravel-autodoc",
+    "description": "Automatic documentation generator for Laravel projects",
+    "type": "library",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0",
+        "illuminate/console": "^12.0",
+        "nikic/php-parser": "^5.0"
+    },
+    "license": "MIT",
+    "homepage": "https://github.com/ryan-ajility/laravel-autodoc",
+    "authors": [
+        {
+            "name": "ryan-ajility",
+            "email": "ryan@ajility.dev"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/ryan-ajility/laravel-autodoc/issues",
+        "source": "https://github.com/ryan-ajility/laravel-autodoc"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ajility\\LaravelAutodoc\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ajility\\LaravelAutodoc\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ajility\\LaravelAutodoc\\AutodocServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require-dev": {
+        "orchestra/testbench": "^10.8",
+        "phpunit/phpunit": "^11.0",
+        "mockery/mockery": "^1.6",
+        "laravel/pint": "^1.26"
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench serve --ansi"
+        ],
+        "run-manual-test": "vendor/bin/testbench autodoc:generate --path=examples/docs --source=examples/SampleApp --private --protected"
+    }
+}
