@@ -199,7 +199,8 @@ class DocumentationGenerator
      * Get the project root directory.
      *
      * In a regular Laravel app, this uses base_path().
-     * During testing, we need to detect the actual package root.
+     * When running via testbench (as a dependency), uses getcwd() to find
+     * the consumer project root.
      *
      * @return string The project root directory
      */
@@ -211,8 +212,9 @@ class DocumentationGenerator
                 $basePath = base_path();
 
                 if (str_contains($basePath, 'testbench-core/laravel')) {
-                    // We're in testbench - find the actual package root
-                    return $this->findPackageRoot();
+                    // We're in testbench - use getcwd() which points to
+                    // the actual consumer project directory
+                    return getcwd();
                 }
 
                 return $basePath;

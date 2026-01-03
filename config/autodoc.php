@@ -17,7 +17,17 @@
 |
 */
 
-$configFile = base_path('autodoc.json');
+// Determine the correct project root for finding autodoc.json
+// When running via testbench, base_path() points to testbench's Laravel stub
+// In that case, use getcwd() which points to the actual consumer project
+$basePath = base_path();
+if (str_contains($basePath, 'testbench-core/laravel')) {
+    $projectRoot = getcwd();
+} else {
+    $projectRoot = $basePath;
+}
+
+$configFile = $projectRoot.'/autodoc.json';
 $jsonConfig = [];
 
 if (file_exists($configFile)) {
@@ -54,7 +64,7 @@ return [
     | Can be overridden with --path option when running the command.
     |
     */
-    'output_path' => $jsonConfig['output_path'] ?? storage_path('app/docs'),
+    'output_path' => $jsonConfig['output_path'] ?? ($projectRoot.'/storage/app/docs'),
 
     /*
     |--------------------------------------------------------------------------
@@ -62,11 +72,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | The directories to scan for PHP files. By default, it scans the 'app'
-    | directory, but you can add more directories as needed.
+    | directory for Laravel apps, or 'src' for packages running via testbench.
     |
     */
     'source_directories' => $jsonConfig['source_directories'] ?? [
-        app_path(),
+        str_contains($basePath, 'testbench-core/laravel') ? $projectRoot.'/src' : app_path(),
     ],
 
     /*
