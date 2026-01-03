@@ -43,8 +43,12 @@ class DocumentationGenerator
             throw new \InvalidArgumentException('source_directories must be a non-empty array');
         }
 
-        // Trim the output path
+        // Trim the output path and convert to absolute path for consistent path calculations
         $outputPath = trim($config['output_path']);
+        if (! $this->isAbsolutePath($outputPath)) {
+            $projectRoot = $this->getProjectRoot();
+            $outputPath = $projectRoot.DIRECTORY_SEPARATOR.$outputPath;
+        }
         $sourceDirectories = $config['source_directories'];
         $excludedDirectories = $config['excluded_directories'];
         $fileExtensions = $config['file_extensions'];
@@ -233,6 +237,27 @@ class DocumentationGenerator
 
         // Standalone development - go up from src/Services to package root
         return dirname(__DIR__, 2);
+    }
+
+    /**
+     * Check if a path is absolute.
+     *
+     * @param  string  $path  The path to check
+     * @return bool True if the path is absolute
+     */
+    private function isAbsolutePath(string $path): bool
+    {
+        // Unix absolute paths start with /
+        if (str_starts_with($path, '/')) {
+            return true;
+        }
+
+        // Windows absolute paths start with drive letter (e.g., C:\)
+        if (preg_match('/^[a-zA-Z]:[\\\\\/]/', $path)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
