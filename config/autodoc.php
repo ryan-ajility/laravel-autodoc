@@ -18,13 +18,22 @@
 */
 
 // Determine the correct project root for finding autodoc.json
-// When running via testbench, base_path() points to testbench's Laravel stub
-// In that case, use getcwd() which points to the actual consumer project
-$basePath = base_path();
-if (str_contains($basePath, 'testbench-core/laravel')) {
-    $projectRoot = getcwd();
+// When installed as a dependency, find the consumer project by locating vendor directory
+$configDir = __DIR__;  // This is vendor/ajility/laravel-autodoc/config when installed as dependency
+$isPackageContext = false;
+
+// Check if we're installed as a dependency (in vendor folder)
+if (preg_match('#^(.+)[/\\\\]vendor[/\\\\]ajility[/\\\\]laravel-autodoc[/\\\\]#', $configDir, $matches)) {
+    // We're a dependency - use the consumer project root
+    $projectRoot = $matches[1];
+    $isPackageContext = true;
+} elseif (function_exists('base_path')) {
+    // Regular Laravel app context
+    $projectRoot = base_path();
 } else {
-    $projectRoot = $basePath;
+    // Standalone development - use current directory
+    $projectRoot = getcwd();
+    $isPackageContext = true;
 }
 
 $configFile = $projectRoot.'/autodoc.json';
@@ -54,6 +63,18 @@ if (file_exists($configFile)) {
     }
 }
 
+// When used as a dependency, require autodoc.json for source_directories
+if ($isPackageContext && empty($jsonConfig['source_directories'])) {
+    throw new \RuntimeException(
+        "When using laravel-autodoc as a dependency, you must create an autodoc.json file\n".
+        "in your project root ({$projectRoot}) with at least 'source_directories' configured.\n\n".
+        "Example autodoc.json:\n".
+        "{\n".
+        '  "source_directories": ["src"]'."\n".
+        '}'
+    );
+}
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -72,11 +93,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | The directories to scan for PHP files. By default, it scans the 'app'
-    | directory for Laravel apps, or 'src' for packages running via testbench.
+    | directory for Laravel apps. When using this package as a dependency,
+    | you must configure source_directories in your autodoc.json file.
     |
     */
     'source_directories' => $jsonConfig['source_directories'] ?? [
-        str_contains($basePath, 'testbench-core/laravel') ? $projectRoot.'/src' : app_path(),
+        function_exists('app_path') ? app_path() : $projectRoot.'/app',
     ],
 
     /*

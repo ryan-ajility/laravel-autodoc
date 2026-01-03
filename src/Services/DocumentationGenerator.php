@@ -198,70 +198,41 @@ class DocumentationGenerator
     /**
      * Get the project root directory.
      *
+     * When installed as a dependency, finds the consumer project by
+     * locating the vendor directory in the path.
      * In a regular Laravel app, this uses base_path().
-     * When running via testbench (as a dependency), uses getcwd() to find
-     * the consumer project root.
+     * For package development with testbench, uses the package root directory.
      *
      * @return string The project root directory
      */
     private function getProjectRoot(): string
     {
-        // Try to get base_path() if available (Laravel app context)
+        $currentDir = __DIR__;  // This is vendor/ajility/laravel-autodoc/src/Services when installed as dependency
+
+        // Check if we're installed as a dependency (works on both Unix and Windows)
+        if (preg_match('#^(.+)[/\\\\]vendor[/\\\\]ajility[/\\\\]laravel-autodoc[/\\\\]#', $currentDir, $matches)) {
+            return $matches[1];
+        }
+
+        // Regular Laravel context
         if (function_exists('base_path')) {
             try {
                 $basePath = base_path();
 
+                // If base_path points to testbench, we're in package development mode
+                // Use the package root (go up from src/Services)
                 if (str_contains($basePath, 'testbench-core/laravel')) {
-                    // We're in testbench - use getcwd() which points to
-                    // the actual consumer project directory
-                    return getcwd();
+                    return dirname(__DIR__, 2);
                 }
 
                 return $basePath;
             } catch (\Throwable $e) {
-                // base_path() function exists but Laravel app not initialized
-                // Fall through to find package root directly
+                // Fall through
             }
         }
 
-        // No Laravel context - find package root directly
-        return $this->findPackageRoot();
-    }
-
-    /**
-     * Find the package root by looking for composer.json
-     *
-     * @return string The package root directory
-     */
-    private function findPackageRoot(): string
-    {
-        $currentDir = __DIR__;
-
-        while ($currentDir !== '/' && $currentDir !== dirname($currentDir)) {
-            if (file_exists($currentDir.'/composer.json')) {
-                $composerJsonPath = $currentDir.'/composer.json';
-                $composerContent = file_get_contents($composerJsonPath);
-
-                if ($composerContent === false) {
-                    // If we can't read it, skip to next directory
-                    $currentDir = dirname($currentDir);
-
-                    continue;
-                }
-
-                $composerData = json_decode($composerContent, true);
-
-                // Check if this is the package's composer.json
-                if (isset($composerData['name']) && $composerData['name'] === 'ajility/laravel-autodoc') {
-                    return $currentDir;
-                }
-            }
-
-            $currentDir = dirname($currentDir);
-        }
-
-        // Fallback to current directory
-        return __DIR__;
+        // Standalone development - go up from src/Services to package root
+        return dirname(__DIR__, 2);
     }
 
     /**
